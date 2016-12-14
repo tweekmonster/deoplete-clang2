@@ -10,10 +10,10 @@ function! clang2#after_complete() abort
     return
   endif
 
-  let b:complete_start = [line('.'), col('.') - strlen(v:completed_item.word)]
-  if getline('.') !~# '<#.*#>'
+  if v:completed_item.word !~# '<#.*#>'
     return
   endif
+  call cursor(line('.'), col('.') - strlen(v:completed_item.word))
   call feedkeys(s:select_placeholder('n', 0), 'n')
 endfunction
 
@@ -29,6 +29,10 @@ function! s:find_placeholder(dir) abort
 
   let p = getcurpos()
   let origin = p[2]
+  if origin >= len(text) - 1
+    let origin = 0
+  endif
+
   if a:dir == -1
     let s = origin
     for _ in range(2)
@@ -97,6 +101,33 @@ endfunction
 function! s:maparg(map, mode) abort
   let arg = maparg(a:map, a:mode)
   return substitute(arg, '\(<[^>]\+>\)', '\=eval(''"\''.submatch(1).''"'')', 'g')
+endfunction
+
+
+function! clang2#_cl_meth(line, col) abort
+  let [l, c] = getpos('.')[1:2]
+  if a:line == l
+    let c += 1
+  endif
+
+  call cursor(a:line, a:col)
+  undojoin
+  normal! i[
+  call cursor(l, c)
+endfunction
+
+
+function! s:close_brace() abort
+  if !exists('b:clang2_orig_maps')
+    return ']'
+  endif
+
+  let [l, c] = _clang2_objc_close_brace(line('.'), col('.'))
+  if l != 0
+    return "\<c-g>u]\<c-\>\<c-o>:call clang2#_cl_meth(".l.",".c.")\<cr>"
+  endif
+
+  return get(b:clang2_orig_maps, ']', ']')
 endfunction
 
 
