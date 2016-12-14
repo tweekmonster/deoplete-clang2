@@ -1,4 +1,7 @@
-function! clang2#dl_progress(msg) abort
+let s:pl_prev = get(g:, 'clang2_placeholder_prev', '<s-tab>')
+let s:pl_next = get(g:, 'clang2_placeholder_next', '<tab>')
+
+function! clang2#status(msg) abort
   echo '[deoplete-clang2]' a:msg
 endfunction
 
@@ -11,8 +14,7 @@ function! clang2#after_complete() abort
   if getline('.') !~# '<#.*#>'
     return
   endif
-  stopinsert
-  execute "normal! ".s:select_placeholder('n', 0)
+  call feedkeys(s:select_placeholder('n', 0), 'n')
 endfunction
 
 
@@ -48,9 +50,7 @@ function! s:find_placeholder(dir) abort
   let p[2] = s + 1
   let p1 = copy(p)
 
-  " Not sure why, but after completion, the ending cursor position is off by
-  " one.
-  let p[2] = e + (a:dir == 0 ? 2 : 1)
+  let p[2] = e + 1
   let p2 = copy(p)
 
   return [p1, p2]
@@ -61,7 +61,10 @@ function! s:select_placeholder(mode, dir) abort
   if a:dir == 0
     let orig_key = ''
   else
-    let orig_key = a:dir == -1 ? "\<c-p>" : "\<c-n>"
+    let orig_key = a:dir == -1 ? s:pl_prev : s:pl_next
+    if orig_key =~# '^<[^<>]*>$'
+      let orig_key = eval('"\'.orig_key.'"')
+    endif
   endif
 
   if a:dir != 0 && exists('b:clang2_orig_maps')
@@ -69,10 +72,6 @@ function! s:select_placeholder(mode, dir) abort
     if !empty(saved_key)
       let orig_key = saved_key
     endif
-  endif
-
-  if pumvisible()
-    return orig_key
   endif
 
   let [p1, p2] = s:find_placeholder(a:dir)
@@ -101,6 +100,32 @@ function! s:maparg(map, mode) abort
 endfunction
 
 
+function! s:steal_keys() abort
+  if exists('b:clang2_orig_maps')
+    return
+  endif
+
+  " Original map args to use when there's no placeholders
+  let b:clang2_orig_maps = {
+        \ 's': [s:maparg(s:pl_prev, 's'), s:maparg(s:pl_next, 's')],
+        \ 'n': [s:maparg(s:pl_prev, 'n'), s:maparg(s:pl_next, 'n')],
+        \ 'i': [s:maparg(s:pl_prev, 'i'), s:maparg(s:pl_next, 'i')],
+        \ ']': s:maparg(']', 'i'),
+        \ }
+
+  execute 'snoremap <silent><buffer><expr> '.strtrans(s:pl_next).' <sid>select_placeholder("s", 1)'
+  execute 'snoremap <silent><buffer><expr> '.strtrans(s:pl_prev).' <sid>select_placeholder("s", -1)'
+  execute 'nnoremap <silent><buffer><expr> '.strtrans(s:pl_next).' <sid>select_placeholder("n", 1)'
+  execute 'nnoremap <silent><buffer><expr> '.strtrans(s:pl_prev).' <sid>select_placeholder("n", -1)'
+  execute 'inoremap <silent><buffer><expr> '.strtrans(s:pl_next).' <sid>select_placeholder("i", 1)'
+  execute 'inoremap <silent><buffer><expr> '.strtrans(s:pl_prev).' <sid>select_placeholder("i", -1)'
+
+  inoremap <silent><buffer><expr> ] <sid>close_brace()
+
+  autocmd! clang2 InsertEnter <buffer>
+endfunction
+
+
 function! clang2#init() abort
   if exists('b:did_clang2')
     return
@@ -111,21 +136,6 @@ function! clang2#init() abort
   augroup clang2
     autocmd! * <buffer>
     autocmd CompleteDone <buffer> call clang2#after_complete()
+    autocmd InsertEnter <buffer> call s:steal_keys()
   augroup END
-
-
-  " Original map args to use when there's no placeholders
-  let b:clang2_orig_maps = {
-        \ 's': [s:maparg("\<c-n>", 's'), s:maparg("\<c-p>", 's')],
-        \ 'n': [s:maparg("\<c-n>", 'n'), s:maparg("\<c-p>", 'n')],
-        \ 'i': [s:maparg("\<c-n>", 'i'), s:maparg("\<c-p>", 'i')],
-        \ }
-
-
-  snoremap <silent><buffer><expr> <c-n> <sid>select_placeholder('s', 1)
-  snoremap <silent><buffer><expr> <c-p> <sid>select_placeholder('s', -1)
-  nnoremap <silent><buffer><expr> <c-n> <sid>select_placeholder('n', 1)
-  nnoremap <silent><buffer><expr> <c-p> <sid>select_placeholder('n', -1)
-  inoremap <silent><buffer><expr> <c-n> <sid>select_placeholder('i', 1)
-  inoremap <silent><buffer><expr> <c-p> <sid>select_placeholder('i', -1)
 endfunction

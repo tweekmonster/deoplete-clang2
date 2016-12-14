@@ -79,7 +79,7 @@ darwin_sdk_url = 'https://github.com/phracker/MacOSX-SDKs/releases/download/MacO
 
 
 def dl_progress(nvim, msg):
-    nvim.async_call(lambda n, m: n.eval('clang2#dl_progress(%r)' % m),
+    nvim.async_call(lambda n, m: n.eval('clang2#status(%r)' % m),
                     nvim, msg)
 
 
