@@ -122,6 +122,10 @@ function! s:close_brace() abort
     return ']'
   endif
 
+  if &filetype !~# '\<objc'
+    return get(b:clang2_orig_maps, ']', ']')
+  endif
+
   let [l, c] = _clang2_objc_close_brace(line('.'), col('.'))
   if l != 0
     return "\<c-g>u]\<c-\>\<c-o>:call clang2#_cl_meth(".l.",".c.")\<cr>"
