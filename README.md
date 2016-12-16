@@ -83,6 +83,11 @@ defaults are:
 }
 ```
 
+`deoplete#sources#clang#preproc_max_lines` sets the maximum number of lines to
+search for a `#ifdef` or `#endif` line.  `#ifdef` lines are discarded to get
+completions within conditional preprocessor blocks.  The default is `50`,
+setting it to `0` disables this feature.
+
 ### MacOSX10.`_` SDK completions
 
 (You may find it funny that I haven't tested this on macOS)

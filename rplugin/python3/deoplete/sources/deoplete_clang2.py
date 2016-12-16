@@ -493,6 +493,21 @@ class Source(Base):
 
         buf = self.nvim.current.buffer
         src = buf[:]
+        max_lines = context['vars'].get(
+            'deoplete#sources#clang#preproc_max_lines', 50)
+        if max_lines:
+            for i, l in enumerate(reversed(src[max(0, line-max_lines):line])):
+                l = l.lstrip()
+                if l.startswith('#'):
+                    l = l.lstrip('# ')
+                    if l.startswith('ifdef'):
+                        self.debug('Ignoring preproc line %d', line - i)
+                        src[line - i - 1] = ''
+                        break
+                    elif l.startswith('endif'):
+                        self.debug('Stopped preproc search on line %d',
+                                   line - i)
+                        break
 
         code_flags = [
             '-code-completion-macros',
