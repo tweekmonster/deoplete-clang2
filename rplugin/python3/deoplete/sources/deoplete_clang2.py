@@ -120,6 +120,7 @@ def download_sdk(nvim, version):
 class Source(Base):
     def __init__(self, nvim):
         super(Source, self).__init__(nvim)
+        self.clang_path = ''
         self.min_pattern_length = 0
         self.nvim = nvim
         self.name = 'clang2'
@@ -140,6 +141,8 @@ class Source(Base):
             self.find_db_flags(context)
             self.last = {}
             self.scope_completions = []
+        self.clang_path = context['vars'].get(
+            'deoplete#sources#clang#executable', 'clang')
 
     def get_complete_position(self, context):
         pat = r'->|\.'
@@ -260,8 +263,8 @@ class Source(Base):
         stderr = ''
         retry = 5
 
-        cmd = ['clang'] + [arg for arg in cmd
-                           if arg not in self.bad_flags]
+        cmd = [self.clang_path] + [arg for arg in cmd
+                                   if arg not in self.bad_flags]
 
         # Retry a couple times if 'unknown argument' is encountered because I
         # just want completions and I don't care how they're obtained as long

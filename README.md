@@ -70,7 +70,9 @@ are causing completions to not work.
 You can also use `let g:deoplete#sources#clang#flags = ['-Iwhatever', ...]` in
 your nvim configs.
 
-`deoplete#sources#clang#std` is a dict containing the standards you want to
+`g:deoplete#sources#clang#executable` sets the path to the `clang` executable.
+
+`g:deoplete#sources#clang#std` is a dict containing the standards you want to
 use.  It's not used if you already have `-std=whatever` in your flags.  The
 defaults are:
 
@@ -83,7 +85,7 @@ defaults are:
 }
 ```
 
-`deoplete#sources#clang#preproc_max_lines` sets the maximum number of lines to
+`g:deoplete#sources#clang#preproc_max_lines` sets the maximum number of lines to
 search for a `#ifdef` or `#endif` line.  `#ifdef` lines are discarded to get
 completions within conditional preprocessor blocks.  The default is `50`,
 setting it to `0` disables this feature.
