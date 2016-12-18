@@ -72,6 +72,11 @@ your nvim configs.
 
 `g:deoplete#sources#clang#executable` sets the path to the `clang` executable.
 
+`g:deoplete#sources#clang#autofill_neomake` is a boolean that tells this plugin
+to fill in the `g:neomake_<filetype>_clang_maker` variable with the `clang`
+executable path and flags.  You will still need to enable it with
+`g:neomake_<filetype>_enabled_maker = ["clang"]`.
+
 `g:deoplete#sources#clang#std` is a dict containing the standards you want to
 use.  It's not used if you already have `-std=whatever` in your flags.  The
 defaults are:

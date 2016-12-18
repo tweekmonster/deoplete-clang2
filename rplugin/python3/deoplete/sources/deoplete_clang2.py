@@ -135,14 +135,25 @@ class Source(Base):
         self.scope_completions = []
         self.user_flags = {}
         self.darwin_version = 0
+        self.last_neomake_flags = set()
 
     def on_event(self, context, filename=''):
         if context['event'] == 'BufWritePost':
             self.find_db_flags(context)
             self.last = {}
             self.scope_completions = []
+
         self.clang_path = context['vars'].get(
             'deoplete#sources#clang#executable', 'clang')
+
+        if context['vars'].get('deoplete#sources#clang#autofill_neomake', 1):
+            cmd, flags = self.build_flags(context)
+            neomake_flags = set(cmd + flags)
+            if self.last_neomake_flags ^ neomake_flags:
+                self.last_neomake_flags = neomake_flags
+                self.nvim.async_call(lambda n, m:
+                                     n.eval('clang2#set_neomake_cflags(%r)' % m),
+                                     self.nvim, cmd + flags)
 
     def get_complete_position(self, context):
         pat = r'->|\.'
@@ -204,6 +215,8 @@ class Source(Base):
                                 ' '.join(stdout)):
             flag = item.group(1)
             val = item.group(2)
+            if not os.path.exists(val):
+                continue
 
             f = (flag, val)
             if f not in flags:
@@ -448,6 +461,35 @@ class Source(Base):
             '-isystem%s' % os.path.join(sdk_path, 'usr/include'),
         ]
 
+    def build_flags(self, context):
+        filetype = context.get('filetype', '')
+        cmd = ['-x']
+        lang = lang_names.get(filetype)
+        if not lang:
+            return []
+        std = context['vars'].get(
+            'deoplete#sources#clang#std', {}).get(filetype)
+        if not std:
+            std = std_default.get(filetype)
+
+        cmd = ['-x', lang]
+        std = '-std=%s' % std
+
+        flags = self.get_user_flags(context)
+
+        if self.darwin_version:
+            flags = self.apply_darwin_flags(self.darwin_version, flags)
+
+        flags = self.get_clang_flags(lang) + flags
+        db_flags = self.find_db_flags(context)
+        if db_flags:
+            flags = db_flags + flags
+
+        if not any(True for x in flags if x.startswith('-std=')):
+            cmd.append(std)
+
+        return cmd, flags
+
     def gather_candidates(self, context):
         self.darwin_version = 0
         input = context['input']
@@ -489,11 +531,6 @@ class Source(Base):
             self.debug('Reusing scope completions')
             return self.scope_completions
 
-        flags = self.get_user_flags(context)
-
-        if self.darwin_version:
-            flags = self.apply_darwin_flags(self.darwin_version, flags)
-
         buf = self.nvim.current.buffer
         src = buf[:]
         max_lines = context['vars'].get(
@@ -519,26 +556,7 @@ class Source(Base):
             '-code-completion-at=-:%d:%d' % (line, pos+1),
         ]
 
-        cmd = ['-x']
-        lang = lang_names.get(filetype)
-        if not lang:
-            return []
-        std = context['vars'].get(
-            'deoplete#sources#clang#std', {}).get(filetype)
-        if not std:
-            std = std_default.get(filetype)
-
-        cmd = ['-x', lang]
-        std = '-std=%s' % std
-
-        flags = self.get_clang_flags(lang) + flags
-        db_flags = self.find_db_flags(context)
-        if db_flags:
-            flags = db_flags + flags
-
-        if not any(True for x in flags if x.startswith('-std=')):
-            cmd.append(std)
-
+        cmd, flags = self.build_flags(context)
         cmd, flags = self.generate_pch(context, cmd, flags)
 
         completions = []

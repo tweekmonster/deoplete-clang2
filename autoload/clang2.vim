@@ -18,6 +18,85 @@ function! clang2#after_complete() abort
 endfunction
 
 
+function! clang2#set_neomake_cflags(flags) abort
+  if exists(':Neomake') != 2
+    return
+  endif
+
+  if !exists('g:neomake_'.&filetype.'_clang_maker')
+    let g:neomake_{&filetype}_clang_maker = neomake#makers#ft#c#clang()
+  endif
+
+  let m = g:neomake_{&filetype}_clang_maker
+  if !has_key(m, 'orig_args')
+    let m.orig_args = copy(m.args)
+  endif
+
+  let m.args = ['-fsyntax-only']
+  if &filetype =~# 'objc'
+    " Pretty much a copy and paste of Xcode's warning flags.
+    let m.args += [
+          \ '-fmessage-length=0',
+          \ '-Wno-objc-property-implementation',
+          \ '-Wno-objc-missing-property-synthesis',
+          \ '-Wnon-modular-include-in-framework-module',
+          \ '-Werror=non-modular-include-in-framework-module',
+          \ '-Wno-trigraphs',
+          \ '-fpascal-strings',
+          \ '-fno-common',
+          \ '-Wno-missing-field-initializers',
+          \ '-Wno-missing-prototypes',
+          \ '-Werror=return-type',
+          \ '-Wdocumentation',
+          \ '-Wunreachable-code',
+          \ '-Wno-implicit-atomic-properties',
+          \ '-Werror=deprecated-objc-isa-usage',
+          \ '-Werror=objc-root-class',
+          \ '-Wno-arc-repeated-use-of-weak',
+          \ '-Wduplicate-method-match',
+          \ '-Wno-missing-braces',
+          \ '-Wparentheses',
+          \ '-Wswitch',
+          \ '-Wunused-function',
+          \ '-Wno-unused-label',
+          \ '-Wno-unused-parameter',
+          \ '-Wunused-variable',
+          \ '-Wunused-value',
+          \ '-Wempty-body',
+          \ '-Wconditional-uninitialized',
+          \ '-Wno-unknown-pragmas',
+          \ '-Wno-shadow',
+          \ '-Wno-four-char-constants',
+          \ '-Wno-conversion',
+          \ '-Wconstant-conversion',
+          \ '-Wint-conversion',
+          \ '-Wbool-conversion',
+          \ '-Wenum-conversion',
+          \ '-Wshorten-64-to-32',
+          \ '-Wpointer-sign',
+          \ '-Wno-newline-eof',
+          \ '-Wno-selector',
+          \ '-Wno-strict-selector-match',
+          \ '-Wundeclared-selector',
+          \ '-Wno-deprecated-implementations',
+          \ '-fasm-blocks',
+          \ '-fstrict-aliasing',
+          \ '-Wprotocol',
+          \ '-Wdeprecated-declarations',
+          \ '-Wno-sign-conversion',
+          \ '-Winfinite-recursion',
+          \ ]
+  endif
+
+  let m.args += a:flags
+  if exists('g:deoplete#sources#clang#executable')
+    let m.exe = g:deoplete#sources#clang#executable
+  else
+    let m.exe = 'clang'
+  endif
+endfunction
+
+
 function! s:find_placeholder(dir) abort
   let text = getline('.')
   let p1 = []
