@@ -177,8 +177,11 @@ endfunction
 
 
 " Parse a map arg
-function! s:maparg(map, mode) abort
+function! s:maparg(map, mode, ...) abort
   let arg = maparg(a:map, a:mode)
+  if a:0 && empty(arg)
+    return a:1
+  endif
   return substitute(arg, '\(<[^>]\+>\)', '\=eval(''"\''.submatch(1).''"'')', 'g')
 endfunction
 
@@ -224,7 +227,7 @@ function! s:steal_keys() abort
         \ 's': [s:maparg(s:pl_prev, 's'), s:maparg(s:pl_next, 's')],
         \ 'n': [s:maparg(s:pl_prev, 'n'), s:maparg(s:pl_next, 'n')],
         \ 'i': [s:maparg(s:pl_prev, 'i'), s:maparg(s:pl_next, 'i')],
-        \ ']': s:maparg(']', 'i'),
+        \ ']': s:maparg(']', 'i', ']'),
         \ }
 
   execute 'snoremap <silent><buffer><expr> '.strtrans(s:pl_next).' <sid>select_placeholder("s", 1)'
