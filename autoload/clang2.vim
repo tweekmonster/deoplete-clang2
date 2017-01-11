@@ -18,6 +18,13 @@ function! clang2#after_complete() abort
 endfunction
 
 
+function! s:noop_postprocess(msg) abort
+  " Don't allow the whitespace to be compressed to preserve the alignment of
+  " Fix-It hints.
+  return a:msg
+endfunction
+
+
 function! clang2#set_neomake_cflags(flags) abort
   if exists(':Neomake') != 2
     return
@@ -31,6 +38,8 @@ function! clang2#set_neomake_cflags(flags) abort
   if !has_key(m, 'orig_args')
     let m.orig_args = copy(m.args)
   endif
+
+  let m.postprocess = function('s:noop_postprocess')
 
   let m.args = ['-fsyntax-only']
   if &filetype =~# 'objc'
