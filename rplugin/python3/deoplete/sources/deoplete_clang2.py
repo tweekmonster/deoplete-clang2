@@ -218,10 +218,10 @@ class Source(Base):
             if not os.path.exists(val):
                 continue
 
-            f = (flag, val)
+            f = '%s%s' % (flag, val)
             if f not in flags:
                 flags.append(f)
-        self.clang_flags[lang] = self.clean_flags(chain.from_iterable(flags))
+        self.clang_flags[lang] = self.clean_flags(flags)
         return self.clang_flags[lang]
 
     def parse_clang_flags_file(self, filename):

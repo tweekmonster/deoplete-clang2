@@ -88,7 +88,7 @@ function! clang2#set_neomake_cflags(flags) abort
           \ ]
   endif
 
-  let m.args += a:flags
+  let m.args += filter(copy(a:flags), 'v:val !~# "^-internal"')
   if exists('g:deoplete#sources#clang#executable')
     let m.exe = g:deoplete#sources#clang#executable
   else
