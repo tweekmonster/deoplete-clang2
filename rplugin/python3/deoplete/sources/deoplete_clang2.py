@@ -134,6 +134,7 @@ class Source(Base):
         self.last = {}
         self.scope_completions = []
         self.user_flags = {}
+        self.sys_includes = {}
         self.darwin_version = 0
         self.last_neomake_flags = set()
 
@@ -156,6 +157,11 @@ class Source(Base):
                                      self.nvim, cmd + flags)
 
     def get_complete_position(self, context):
+        m = re.search(r'^\s*#(?:include|import)\s+["<]', context['input'])
+        if m:
+            context['clang2_include'] = m.group(0)
+            return m.end()
+
         pat = r'->|\.'
         objc = context.get('filetype', '') in ('objc', 'objcpp')
         if objc:
@@ -490,8 +496,88 @@ class Source(Base):
 
         return cmd, flags
 
+    def _gather_sys_includes(self, flag, path, seen):
+        """#include <> files from compiler include flags."""
+        if path in self.sys_includes:
+            yield from filter(lambda x: x['word'] not in seen,
+                              self.sys_includes[path])
+            return
+
+        headers = []
+
+        if flag == '-F' or 'framework' in flag:
+            for framework in os.listdir(path):
+                name = framework
+                if name.endswith('.framework'):
+                    name = name[:-10]
+                fw_path = os.path.join(path, framework, 'Headers') + '/'
+                if not os.path.exists(fw_path):
+                    continue
+
+                for root, dirs, files in os.walk(fw_path):
+                    dirs[:] = list(sorted([d for d in dirs if d not in repo_dirs]))
+                    for file in sorted(files):
+                        if not file.endswith('.h'):
+                            continue
+                        full_path = os.path.join(root, file)
+                        include_path = os.path.join(name,
+                                                    full_path[len(fw_path):])
+                        item = {'word': include_path, 'kind': 'sys'}
+                        headers.append(item)
+                        if include_path not in seen:
+                            seen.add(include_path)
+                            yield item
+        else:
+            for root, dirs, files in os.walk(path):
+                dirs[:] = list(sorted([d for d in dirs if d not in repo_dirs]))
+
+                for file in sorted(files):
+                    if not file.endswith('.h'):
+                        continue
+                    include_path = os.path.join(root, file)[len(path)+1:]
+                    item = {'word': include_path, 'kind': 'sys'}
+                    headers.append(item)
+                    if include_path not in seen:
+                        seen.add(include_path)
+                        yield item
+
+        self.sys_includes[path] = headers
+
+    def _gather_local_includes(self, context, seen):
+        """#include "" files relative to the current buffer."""
+        path = os.path.dirname(context.get('bufname', ''))
+        for root, dirs, files in os.walk(path):
+            dirs[:] = list(sorted([d for d in dirs if d not in repo_dirs]))
+            for file in sorted(files):
+                if not file.endswith('.h'):
+                    continue
+                include_path = os.path.join(path, file)
+                seen.add(include_path)
+                yield {'word': include_path, 'kind': 'dir'}
+
+    def gather_includes(self, context):
+        seen = set()
+
+        # Exclude already imported files
+        src = '\n'.join(self.nvim.current.buffer[:5000])
+        seen.update(x[1:-1] for x in re.findall(
+            r'^\s*#(?:include|import) ((?:"[^"]+")|(?:<[^>]+>))$', src, re.M))
+
+        if context['clang2_include'][-1] == '"':
+            yield from self._gather_local_includes(context, seen)
+
+        _, flags = self.build_flags(context)
+        for item in re.finditer(r'(-[IF]|' + flag_pattern +
+                                ')\s*(\S+)', ' '.join(flags)):
+            yield from self._gather_sys_includes(item.group(1), item.group(2),
+                                                 seen)
+
     def gather_candidates(self, context):
         self.darwin_version = 0
+
+        if 'clang2_include' in context:
+            return self.gather_includes(context)
+
         input = context['input']
         filetype = context.get('filetype', '')
         complete_str = context['complete_str']
