@@ -339,20 +339,20 @@ class Source(Base):
                 for entry in json.load(fp):
                     directory = entry.get('directory', cwd)
                     file, ext = os.path.splitext(entry.get('file', ''))
-                    for item in re.finditer(r'(-[IDF]|' + flag_pattern +
+                    for item in re.finditer(r'(-[IDFW]|' + flag_pattern +
                                             ')\s*(\S+)', entry.get('command')):
                         flag = item.group(1)
                         val = item.group(2)
 
-                        if flag != '-D':
+                        if flag not in ('-D', '-W'):
                             val = os.path.normpath(os.path.join(directory, val))
 
-                        f = (flag, val)
+                        f = flag + val
                         if f not in flags:
                             flags.append(f)
                     # The db is assumed to be as good as it gets.  Don't pass
                     # it through clean_flags.
-                    entries[file] = list(chain.from_iterable(flags))
+                    entries[file] = flags
             except:
                 raise
 
