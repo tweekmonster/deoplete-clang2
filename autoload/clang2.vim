@@ -150,28 +150,23 @@ endfunction
 
 
 function! s:select_placeholder(mode, dir) abort
-  if a:dir == 0
-    let orig_key = ''
-  else
-    let orig_key = a:dir == -1 ? s:pl_prev : s:pl_next
-    if orig_key =~# '^<[^<>]*>$'
-      let orig_key = eval('"\'.orig_key.'"')
-    endif
-  endif
-
-  if a:dir != 0 && exists('b:clang2_orig_maps')
-    let saved_key = b:clang2_orig_maps[a:mode][a:dir == -1 ? 1 : 0]
-    if !empty(saved_key)
-      let orig_key = saved_key
-    endif
-  endif
-
   let [p1, p2] = s:find_placeholder(a:dir)
   if empty(p1) || empty(p2)
-    if mode() =~? 's\|v'
+    if mode() =~? 's\|v' || a:dir == 0
       return ''
     endif
-    return orig_key
+
+    let key = s:getmap(a:mode, a:dir == -1 ? 0 : 1)
+    if !empty(key)
+      return key
+    endif
+
+    let key = a:dir == -1 ? s:pl_prev : s:pl_next
+    if key =~# '^<[^<>]*>$'
+      return eval('"\'.key.'"')
+    endif
+
+    return key
   endif
 
   call setpos("'<", p1)
@@ -182,16 +177,6 @@ function! s:select_placeholder(mode, dir) abort
   endif
 
   return "\<esc>gvze\<c-g>"
-endfunction
-
-
-" Parse a map arg
-function! s:maparg(map, mode, ...) abort
-  let arg = maparg(a:map, a:mode)
-  if a:0 && empty(arg)
-    return a:1
-  endif
-  return substitute(arg, '\(<[^>]\+>\)', '\=eval(''"\''.submatch(1).''"'')', 'g')
 endfunction
 
 
@@ -209,12 +194,13 @@ endfunction
 
 
 function! s:close_brace() abort
-  if !exists('b:clang2_orig_maps')
-    return ']'
-  endif
-
   if &filetype !~# '\<objc'
-    return get(b:clang2_orig_maps, ']', ']')
+    let m = s:getmap(']', 0)
+    if empty(m)
+      return ']'
+    endif
+
+    return m
   endif
 
   let [l, c] = _clang2_objc_close_brace(line('.'), col('.'))
@@ -222,7 +208,66 @@ function! s:close_brace() abort
     return "\<c-g>u]\<c-\>\<c-o>:call clang2#_cl_meth(".l.",".c.")\<cr>"
   endif
 
-  return get(b:clang2_orig_maps, ']', ']')
+  let m = s:getmap(']', 0)
+  if empty(m)
+    return ']'
+  endif
+
+  return m
+endfunction
+
+" Parse a map arg
+function! s:maparg(map, mode, ...) abort
+  let arg = maparg(a:map, a:mode, 0, 1)
+  if empty(arg)
+    if a:0
+      return a:1
+    endif
+    return ''
+  endif
+
+  while arg.rhs =~? '^<Plug>'
+    let arg = maparg(arg.rhs, a:mode, 0, 1)
+    if empty(arg)
+      if a:0
+        return a:1
+      endif
+      return ''
+    endif
+  endwhile
+
+  let m = {
+        \ 'rhs': substitute(arg.rhs, '\c<sid>', "\<SNR>" . arg.sid . '_', 'g'),
+        \ 'expr': arg.expr,
+        \ }
+  let m.rhs = substitute(m.rhs,
+        \ '\(\\\@<!<[^>]\+>\)',
+        \ '\=eval(''"\''.submatch(1).''"'')', 'g')
+  return m
+endfunction
+
+
+function! s:getmap(mode, map) abort
+  if !exists('b:clang2_orig_maps')
+    return ''
+  endif
+
+  let mode = get(b:clang2_orig_maps, a:mode, [])
+  if a:map < 0 || a:map >= len(mode)
+    return a:map
+  endif
+
+  let m = mode[a:map]
+
+  if empty(m)
+    return ''
+  endif
+
+  if m.expr
+    return eval(m.rhs)
+  endif
+
+  return m.rhs
 endfunction
 
 
@@ -236,7 +281,7 @@ function! s:steal_keys() abort
         \ 's': [s:maparg(s:pl_prev, 's'), s:maparg(s:pl_next, 's')],
         \ 'n': [s:maparg(s:pl_prev, 'n'), s:maparg(s:pl_next, 'n')],
         \ 'i': [s:maparg(s:pl_prev, 'i'), s:maparg(s:pl_next, 'i')],
-        \ ']': s:maparg(']', 'i', ']'),
+        \ ']': [s:maparg(']', 'i', ']')],
         \ }
 
   execute 'snoremap <silent><buffer><expr> '.strtrans(s:pl_next).' <sid>select_placeholder("s", 1)'
