@@ -276,6 +276,15 @@ function! s:steal_keys() abort
     return
   endif
 
+  if exists('g:UltiSnipsRemoveSelectModeMappings')
+        \ && g:UltiSnipsRemoveSelectModeMappings
+    " We must hide our criminal activities from UltiSnips since it's the world
+    " police on select maps, apparently.
+    let ignored = get(g:, 'UltiSnipsMappingsToIgnore', [])
+    call add(ignored, 'deoplete-clang2')
+    let g:UltiSnipsMappingsToIgnore = ignored
+  endif
+
   " Original map args to use when there's no placeholders
   let b:clang2_orig_maps = {
         \ 's': [s:maparg(s:pl_prev, 's'), s:maparg(s:pl_next, 's')],
