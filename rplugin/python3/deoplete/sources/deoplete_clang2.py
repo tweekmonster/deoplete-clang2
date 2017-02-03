@@ -576,7 +576,7 @@ class Source(Base):
         self.darwin_version = 0
 
         if 'clang2_include' in context:
-            return self.gather_includes(context)
+            return list(self.gather_includes(context))
 
         input = context['input']
         filetype = context.get('filetype', '')
