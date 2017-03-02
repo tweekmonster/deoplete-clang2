@@ -218,21 +218,16 @@ endfunction
 
 " Parse a map arg
 function! s:maparg(map, mode, ...) abort
+  let default = {'rhs': a:0 ? a:1 : a:map, 'expr': 0}
   let arg = maparg(a:map, a:mode, 0, 1)
   if empty(arg)
-    if a:0
-      return a:1
-    endif
-    return ''
+    return default
   endif
 
   while arg.rhs =~? '^<Plug>'
     let arg = maparg(arg.rhs, a:mode, 0, 1)
     if empty(arg)
-      if a:0
-        return a:1
-      endif
-      return ''
+      return default
     endif
   endwhile
 
