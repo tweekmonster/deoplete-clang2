@@ -218,7 +218,9 @@ endfunction
 
 " Parse a map arg
 function! s:maparg(map, mode, ...) abort
-  let default = {'rhs': a:0 ? a:1 : a:map, 'expr': 0}
+  let default = {'expr': 0, 'rhs': a:0 ? a:1 : substitute(a:map,
+        \ '\(\\\@<!<[^>]\+>\)',
+        \ '\=eval(''"\''.submatch(1).''"'')', 'g')}
   let arg = maparg(a:map, a:mode, 0, 1)
   if empty(arg)
     return default
