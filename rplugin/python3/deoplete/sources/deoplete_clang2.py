@@ -556,12 +556,13 @@ class Source(Base):
     def _gather_local_includes(self, context, seen):
         """#include "" files relative to the current buffer."""
         path = os.path.dirname(context.get('bufname', ''))
+        l = len(path)
         for root, dirs, files in os.walk(path):
             dirs[:] = list(sorted([d for d in dirs if d not in repo_dirs]))
             for file in sorted(files):
                 if not file.endswith('.h'):
                     continue
-                include_path = os.path.join(path, file)
+                include_path = os.path.join(root, file)[l:].lstrip('/')
                 seen.add(include_path)
                 yield {'word': include_path, 'kind': 'dir'}
 
