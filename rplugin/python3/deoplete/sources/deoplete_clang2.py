@@ -149,6 +149,8 @@ class Source(Base):
 
         if context['vars'].get('deoplete#sources#clang#autofill_neomake', 1):
             cmd, flags = self.build_flags(context)
+            if context['filetype'] == 'cpp':
+                cmd += ['-stdlib=libc++']
             neomake_flags = set(cmd + flags)
             if self.last_neomake_flags ^ neomake_flags:
                 self.last_neomake_flags = neomake_flags
@@ -214,8 +216,11 @@ class Source(Base):
         if lang in self.clang_flags:
             return self.clang_flags[lang]
         flags = []
-        stdout = self.call_clang([], ['-fsyntax-only', '-x', lang, '-', '-v'],
-                                 True)
+        clang_flags = ['-fsyntax-only', '-x', lang]
+        if lang == 'c++':
+            clang_flags.append('-stdlib=libc++')
+        clang_flags.extend(['-', '-v'])
+        stdout = self.call_clang([], clang_flags, True)
 
         for item in re.finditer(r'(' + flag_pattern + ')\s*(\S+)',
                                 ' '.join(stdout)):
@@ -421,6 +426,11 @@ class Source(Base):
                 if i != -1:
                     ctype = comp[2:i]
                     comp = comp[i+2:]
+
+            if comp.endswith('#]'):
+                i = comp.rfind('[#')
+                if i != -1:
+                    comp = comp[:i]
 
             if comp.endswith(')'):
                 info = re.sub(r'<#([^#]+)#>', r'\1', comp)
