@@ -298,7 +298,10 @@ class Source(Base):
             p = subprocess.Popen(cmd, stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
-            out, err = p.communicate('\n'.join(src).encode('utf8'))
+            source = '\n'.join(src).encode('utf8')
+            if len(src) and source[-1] != b'\n':
+                source += b'\n'
+            out, err = p.communicate(source)
             stderr = err.decode('utf8')
             if 'unknown argument' in stderr:
                 for bad in re.finditer(r"unknown argument: '([^']+)'", stderr):
