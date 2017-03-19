@@ -271,7 +271,7 @@ class Source(Base):
         self.user_flags[cwd] = None
         return self.clean_flags(flags)
 
-    def call_clang(self, src, cmd, ret_stderr=False):
+    def call_clang(self, src, cmd, ret_stderr=False, cwd=None):
         """Call clang to do something.
 
         This will call clang up to 5 times if it reports that unknown arguments
@@ -297,7 +297,7 @@ class Source(Base):
             self.debug('Command: %r', ' '.join(cmd))
             p = subprocess.Popen(cmd, stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
+                                 stderr=subprocess.PIPE, cwd=cwd)
             source = '\n'.join(src).encode('utf8')
             if len(src) and source[-1] != b'\n':
                 source += b'\n'
@@ -665,7 +665,7 @@ class Source(Base):
 
         pattern = ''
 
-        for item in self.call_clang(src, cmd):
+        for item in self.call_clang(src, cmd, cwd=os.path.dirname(buf.name)):
             if item.startswith('COMPLETION:'):
                 if pattern:
                     completions.append(self.parse_completion(pattern))
