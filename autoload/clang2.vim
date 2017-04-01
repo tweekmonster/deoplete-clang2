@@ -172,11 +172,16 @@ function! s:select_placeholder(mode, dir) abort
   call setpos("'<", p1)
   call setpos("'>", p2)
 
-  if a:mode ==# 's'
-    return "\<c-g>gvze\<c-g>"
+  let vkeys = 'gvze'
+  if visualmode() ==# 'V'
+    let vkeys = 'gvvze'
   endif
 
-  return "\<esc>gvze\<c-g>"
+  if a:mode ==# 's'
+    return "\<c-g>" . vkeys . "\<c-g>"
+  endif
+
+  return "\<esc>" . vkeys . "\<c-g>"
 endfunction
 
 
