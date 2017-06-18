@@ -165,9 +165,12 @@ class Source(Base):
             return m.end()
 
         pat = r'->|\.'
-        objc = context.get('filetype', '') in ('objc', 'objcpp')
+        ft = context.get('filetype', '')
+        objc = ft in ('objc', 'objcpp')
         if objc:
             pat += r'|[:@\[]|(?:\S\s+)'
+        elif ft == 'cpp':
+            pat += r'|::'
         pat = r'(?:' + pat + ')'
         context['clang2_pattern'] = pat
 
