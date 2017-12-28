@@ -36,9 +36,11 @@ working on.
 
 I'm using `clang 3.8.0`.  Lower versions may work, but are untested.
 
-Please install nvim-yarp plugin for Vim8. https://github.com/roxma/nvim-yarp
+**Vim8 support:**
 
-Please install vim-hug-neovim-rpc plugin for Vim8. https://github.com/roxma/vim-hug-neovim-rpc
+- install [nvim-yarp](https://github.com/roxma/nvim-yarp) plugin for Vim8. 
+- install neovim python client: `pip install neovim`
+- install [vim-hug-neovim-rpc](https://github.com/roxma/vim-hug-neovim-rpc) plugin for Vim8. 
 
 
 ## Install
