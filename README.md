@@ -30,11 +30,15 @@ working on.
 
 ## Requirements
 
-- [Neovim][] with Python 3 configured
+- [Neovim][] or vim8  with if_python3
 - [deoplete.nvim][]
 - `clang`
 
 I'm using `clang 3.8.0`.  Lower versions may work, but are untested.
+
+Please install nvim-yarp plugin for Vim8. https://github.com/roxma/nvim-yarp
+
+Please install vim-hug-neovim-rpc plugin for Vim8. https://github.com/roxma/vim-hug-neovim-rpc
 
 
 ## Install
