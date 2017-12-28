@@ -15,12 +15,12 @@ if has('nvim')
     " rplugin is not placed in rplugin/python3 so that it won't be added to the
     " manifiest when :UpdateRemotePlugins is called.
     call remote#host#RegisterPlugin('clang2-rplugin', s:path.'/rplugin/clang2', [
-          \ {'sync': v:true, 'name': '_clang2_objc_close_brace', 'type': 'function', 'opts': {}},
+          \ {'sync': v:true, 'name': 'Clang2_objc_close_brace', 'type': 'function', 'opts': {}},
           \ ])
   endif
 else
   let s:foo = yarp#py3('clang2_wrap')
-  function! _clang2_objc_close_brace(v) abort
+  function! Clang2_objc_close_brace(v) abort
     return s:foo.call('close_objc_brace', a:v)
   endfunction
 endif

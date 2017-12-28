@@ -4,5 +4,5 @@ import vim
 _obj = _Clang2ElectricBoogaloo(vim)
 
 
-def bar(*args):
-    return _obj.bar(args)
+def close_objc_brace(*args):
+    return _obj.close_objc_brace(args)
