@@ -208,7 +208,7 @@ function! s:close_brace() abort
     return m
   endif
 
-  let [l, c] = _clang2_objc_close_brace(line('.'), col('.'))
+  let [l, c] = Clang2_objc_close_brace(line('.'), col('.'))
   if l != 0
     return "\<c-g>u]\<c-\>\<c-o>:call clang2#_cl_meth(".l.",".c.")\<cr>"
   endif

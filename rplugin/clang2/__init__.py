@@ -8,7 +8,7 @@ class Clang2ElectricBoogaloo(object):
     def __init__(self, nvim):
         self.nvim = nvim
 
-    @neovim.function('_clang2_objc_close_brace', sync=True)
+    @neovim.function('Clang2_objc_close_brace', sync=True)
     def close_objc_brace(self, args):
         line, col = args
         min_line = max(0, line - 10)
