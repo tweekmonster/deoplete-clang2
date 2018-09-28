@@ -350,8 +350,16 @@ class Source(Base):
                 for entry in json.load(fp):
                     directory = entry.get('directory', cwd)
                     file, ext = os.path.splitext(entry.get('file', ''))
+
+                    if 'command' in entry:
+                        command = entry.get('command')
+                    elif 'arguments' in entry:
+                        command = ' '.join(entry.get('arguments'))
+                    else:
+                        raise Exception('Either "command" or "arguments" is required in compilation database')
+
                     for item in re.finditer(r'(-[IDFW]|' + flag_pattern +
-                                            ')\s*(\S+)', entry.get('command')):
+                                            ')\s*(\S+)', command):
                         flag = item.group(1)
                         val = item.group(2)
 
