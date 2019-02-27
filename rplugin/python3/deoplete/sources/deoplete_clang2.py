@@ -318,7 +318,7 @@ class Source(Base):
                         cmd.remove(arg)
                 retry -= 1
                 continue
-            elif self.debug_enabled and stderr.strip():
+            elif self.is_debug_enabled and stderr.strip():
                 # This can be really spammy.
                 self.debug('stderr: %s', stderr)
 
