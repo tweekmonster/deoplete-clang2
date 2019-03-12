@@ -121,7 +121,6 @@ class Source(Base):
     def __init__(self, nvim):
         super(Source, self).__init__(nvim)
         self.clang_path = ''
-        self.min_pattern_length = 0
         self.nvim = nvim
         self.name = 'clang2'
         self.mark = '[clang]'
