@@ -151,7 +151,7 @@ endfunction
 
 function! s:select_placeholder(mode, dir) abort
   let [p1, p2] = s:find_placeholder(a:dir)
-  if empty(p1) || empty(p2)
+  if empty(p1) || empty(p2) || (pumvisible())
     if mode() =~? 's\|v' || a:dir == 0
       return ''
     endif
